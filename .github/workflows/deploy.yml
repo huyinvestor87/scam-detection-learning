@@ -37,6 +37,11 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # Bắt buộc với actions/deploy-pages. Thiếu khối này thì API trả 400
+    # "Missing environment" — đúng lỗi đã gặp ở run #2.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
