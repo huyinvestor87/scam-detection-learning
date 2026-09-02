@@ -1,6 +1,16 @@
 /**
  * Service worker: chạy offline sau lần tải đầu.
- * Tên cache gắn với BUILD_ID nên mỗi lần deploy là một cache mới — iPad không kẹt bản cũ.
+ *
+ * Chiến lược KHÔNG được là cache-first cho toàn bộ site. Lý do rất cụ thể:
+ * tên cache gắn với __BUILD_ID__, mà chuỗi đó chỉ được thay khi deploy bằng
+ * GitHub Actions. Nếu Pages đang publish thẳng từ nhánh thì nó ở nguyên dạng
+ * literal, tên cache không bao giờ đổi, và người học sẽ kẹt vĩnh viễn ở bản cũ
+ * — bài mới push lên cũng không bao giờ thấy. Nên:
+ *
+ *   - vendor/ và font  → cache-first (bất biến, không bao giờ sửa tại chỗ)
+ *   - còn lại          → network-first, rớt mạng mới lấy cache
+ *
+ * Cách này đúng ở cả hai kiểu publish, và vẫn offline được.
  */
 const CACHE = "scam-learn-__BUILD_ID__";
 
@@ -12,6 +22,8 @@ const PRECACHE = [
   "./vendor/katex/katex.min.js",
   "./js/app.js",
 ];
+
+const isImmutable = (url) => url.pathname.includes("/vendor/") || /\.(woff2?|ttf)$/.test(url.pathname);
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -25,19 +37,32 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+function put(request, response) {
+  if (response.ok) {
+    const copy = response.clone();
+    caches.open(CACHE).then((c) => c.put(request, copy));
+  }
+  return response;
+}
+
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  const req = e.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+
+  if (isImmutable(url)) {
+    e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => put(req, res))));
+    return;
+  }
+
+  // Network-first: luôn thấy bài mới nhất khi có mạng, vẫn mở được khi mất mạng.
   e.respondWith(
-    caches.match(e.request).then(
-      (hit) =>
-        hit ||
-        fetch(e.request).then((res) => {
-          if (res.ok && new URL(e.request.url).origin === location.origin) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-    )
+    fetch(req)
+      .then((res) => put(req, res))
+      .catch(() =>
+        caches.match(req).then((hit) => hit || (req.mode === "navigate" ? caches.match("./index.html") : undefined))
+      )
   );
 });
