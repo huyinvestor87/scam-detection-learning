@@ -55,10 +55,17 @@ jobs:
           rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
           touch _site/.nojekyll
 
+      # enablement: true — tự chuyển Pages source sang "GitHub Actions" bằng GITHUB_TOKEN,
+      # khỏi phải vào Settings bấm tay. Cần permissions pages: write ở trên.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
-      - run: echo "Site URL: ${{ steps.deployment.outputs.page_url }}"
+
+      # Chuỗi phải nằm trong dấu nháy: "Site URL: ..." có dấu hai chấm + khoảng trắng,
+      # để trần thì YAML hiểu thành mapping và workflow hỏng ngay từ lúc khởi động.
+      - run: 'echo "Site URL: ${{ steps.deployment.outputs.page_url }}"'

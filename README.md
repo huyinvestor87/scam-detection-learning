@@ -20,9 +20,12 @@ Bài 4–12 đã có đề cương chi tiết, hiển thị ngay trong app ở m
 
 ## Chạy thử
 
+Bản online: <https://huyinvestor87.github.io/scam-detection-learning/>
+
 ```bash
-python3 -m http.server 8080     # rồi mở http://localhost:8080
-node js/tests/golden.js         # chạy contract test
+python3 -m http.server 8080      # rồi mở http://localhost:8080
+node js/tests/golden.js          # contract test
+python3 tools/lint_workflows.py  # chạy trước khi push — CI không tự bắt được lỗi YAML
 ```
 
 ## Lộ trình 12 bài
