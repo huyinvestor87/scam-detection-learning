@@ -1,0 +1,12 @@
+{
+  "name": "scam-detection-learning",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web app học ML phát hiện scam call — code, toán và hình động liên kết hai chiều",
+  "scripts": {
+    "test": "node js/tests/golden.js",
+    "golden": "python3 tools/make_golden.py",
+    "serve": "python3 -m http.server 8080"
+  }
+}

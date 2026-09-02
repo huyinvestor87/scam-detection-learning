@@ -1,0 +1,64 @@
+name: Test rồi deploy lên GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Sinh lại số vàng bằng Python rồi so với các Step JS.
+      # Nếu công thức trong bài học lệch khỏi code đang chạy, bước này hỏng.
+      - name: Sinh số vàng (Python, độc lập với JS)
+        run: python3 tools/make_golden.py
+
+      - name: Contract test — code hiển thị phải khớp code chạy
+        run: node js/tests/golden.js
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Chống cache — gắn build id vào js/css/sw
+        run: |
+          BUILD_ID="${GITHUB_SHA::8}-$(date -u +%Y%m%d%H%M%S)"
+          echo "Build id: $BUILD_ID"
+          grep -rl "__BUILD_ID__" --include="*.html" --include="*.js" . | while read -r f; do
+            sed -i "s/__BUILD_ID__/${BUILD_ID}/g" "$f"
+          done
+          grep -n "?v=" index.html
+
+      - name: Chuẩn bị thư mục xuất bản
+        run: |
+          rm -rf _site && mkdir _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - run: echo "Site URL: ${{ steps.deployment.outputs.page_url }}"
