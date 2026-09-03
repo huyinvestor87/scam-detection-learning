@@ -23,6 +23,10 @@ Ba việc phải chốt trước khi viết thêm bài nào:
    của nhà mạng). Bài 1 nói về chuyện này ở mức khái niệm nhưng app hứa "soi vào pipeline thật" —
    pipeline đó **có tồn tại không?** (xem mục 5).
 
+   **Chốt 2026-09-03 (xem `DATA.md`):** `scam_flag` **chỉ có giá trị 1** → PU thuần; **`verdict_at` CÓ**
+   → temporal split trung thực làm được. `direction` chỉ `outbound` → bỏ khỏi feature. Bài 7 phải mở đầu
+   bằng "không tính được nếu chưa mua slice review"; cần dòng ngân sách cho slice đó.
+
    **Cập nhật (Huy):** CÓ một tập nhãn nhưng là **subset rất nhỏ** — `(customer_id, cli, scam_flag)`.
    Vậy đây là bài toán **positive-unlabeled / semi-supervised thật sự**, không phải "không nhãn" mà
    cũng không phải supervised sạch. Hệ quả cho khoá học:
